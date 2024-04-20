@@ -1,20 +1,26 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net8.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
-        <RootNamespace>LaborAI.EventSourceClient</RootNamespace>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-        <Title>EventSourceClient: Robust Server-Sent Events (SSE) Client for .NET</Title>
-        <Authors>https://rentailabor.com/</Authors>
-        <Description>The EventSourceClient library provides a comprehensive, easy-to-use client implementation for consuming Server-Sent Events (SSE) in .NET applications. Designed to handle real-time data streams efficiently, it is perfect for applications that require seamless live updates like stock tickers, news feeds, or live notifications.</Description>
-        <Copyright>https://rentailabor.com/</Copyright>
-        <PackageProjectUrl>https://github.com/vuminhquang/VDG_EventSourceClient</PackageProjectUrl>
-    </PropertyGroup>
+<PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>LaborAI.EventSourceClient</RootNamespace>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Title>EventSourceClient: Robust Server-Sent Events (SSE) Client for .NET</Title>
+    <Authors>https://rentailabor.com/</Authors>
+    <Description>The EventSourceClient library provides a comprehensive, easy-to-use client implementation for consuming Server-Sent Events (SSE) in .NET applications. Designed to handle real-time data streams efficiently, it is perfect for applications that require seamless live updates like stock tickers, news feeds, or live notifications.</Description>
+    <Copyright>https://rentailabor.com/</Copyright>
+    <PackageProjectUrl>https://github.com/vuminhquang/VDG_EventSourceClient</PackageProjectUrl>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+</PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
-    </ItemGroup>
+<ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+</ItemGroup>
+
+<ItemGroup>
+    <None Include="../../../README.md" Pack="true" PackagePath="/"/>
+</ItemGroup>
+
 
 </Project>
