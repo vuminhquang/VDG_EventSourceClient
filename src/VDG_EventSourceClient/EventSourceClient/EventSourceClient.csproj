@@ -11,7 +11,8 @@
     <Description>The EventSourceClient library provides a comprehensive, easy-to-use client implementation for consuming Server-Sent Events (SSE) in .NET applications. Designed to handle real-time data streams efficiently, it is perfect for applications that require seamless live updates like stock tickers, news feeds, or live notifications.</Description>
     <Copyright>https://rentailabor.com/</Copyright>
     <PackageProjectUrl>https://github.com/vuminhquang/VDG_EventSourceClient</PackageProjectUrl>
-    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
 </PropertyGroup>
 
 <ItemGroup>
