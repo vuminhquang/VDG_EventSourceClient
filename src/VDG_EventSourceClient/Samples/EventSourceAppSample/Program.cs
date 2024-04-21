@@ -9,33 +9,64 @@ ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 });
 
 var logger = loggerFactory.CreateLogger<EventSourceClient>();
-            
+
 var url = "http://localhost:5000/";
 var sseServer = new SseServer(url);
 sseServer.Start();
 
-// Assuming EventSourceClient is properly implemented to handle SSE
-var eventSourceClient = new EventSourceClient(url, new HttpClient(), logger, new EventSourceExtraOptions());
-
-Console.WriteLine("Client is now listening to the SSE server...");
-
-eventSourceClient.EventReceived += (sender, e) =>
+// Section 1: Using URL and HttpClient
+using (var eventSourceClient1 = new EventSourceClient(url, new HttpClient(), logger, new EventSourceExtraOptions()))
 {
-    Console.WriteLine($"Received Event: {e.Type}");
-    Console.WriteLine($"Data: {e.Data}");
-    Console.WriteLine($"ID: {e.Id}");
+
+    Console.WriteLine("Client 1 is now listening to the SSE server...");
+
+    eventSourceClient1.EventReceived += (sender, e) =>
+    {
+        Console.WriteLine($"Client 1 - Received Event: {e.Type}");
+        Console.WriteLine($"Client 1 - Data: {e.Data}");
+        Console.WriteLine($"Client 1 - ID: {e.Id}");
+        if (e.Retry.HasValue)
+        {
+            Console.WriteLine($"Client 1 - Retry: {e.Retry.Value}");
+        }
+    };
+
+    eventSourceClient1.StateChanged += (sender, e) =>
+    {
+        Console.WriteLine($"Client 1 - State Changed: {e.ReadyState}");
+    };
+
+    await eventSourceClient1.Stream();
+}
+
+Console.WriteLine("Create a new EventSourceClient using the HttpContent from the response...");
+
+// Section 2: Using HttpContent from the SSE server
+using var httpClient = new HttpClient();
+var response = await httpClient.GetAsync(new Uri(url), HttpCompletionOption.ResponseHeadersRead);
+response.EnsureSuccessStatusCode();
+
+var eventSourceClient2 = new EventSourceClient(response.Content, logger);
+
+Console.WriteLine("Client 2 is now listening to the SSE server...");
+
+eventSourceClient2.EventReceived += (sender, e) =>
+{
+    Console.WriteLine($"Client 2 - Received Event: {e.Type}");
+    Console.WriteLine($"Client 2 - Data: {e.Data}");
+    Console.WriteLine($"Client 2 - ID: {e.Id}");
     if (e.Retry.HasValue)
     {
-        Console.WriteLine($"Retry: {e.Retry.Value}");
+        Console.WriteLine($"Client 2 - Retry: {e.Retry.Value}");
     }
 };
 
-eventSourceClient.StateChanged += (sender, e) =>
+eventSourceClient2.StateChanged += (sender, e) =>
 {
-    Console.WriteLine($"State Changed: {e.ReadyState}");
+    Console.WriteLine($"Client 2 - State Changed: {e.ReadyState}");
 };
 
-await eventSourceClient.Stream();
+await eventSourceClient2.Stream();
 
 Console.WriteLine("Press ENTER to exit...");
 Console.ReadLine();

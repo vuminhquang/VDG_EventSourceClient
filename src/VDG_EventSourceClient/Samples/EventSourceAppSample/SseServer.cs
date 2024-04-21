@@ -37,18 +37,16 @@ internal class SseServer
 
             try
             {
-                using (var writer = new StreamWriter(response.OutputStream, Encoding.UTF8))
+                await using var writer = new StreamWriter(response.OutputStream, Encoding.UTF8);
+                var eventId = 1;
+                var startTime = DateTime.Now;
+                while ((DateTime.Now - startTime).TotalSeconds < 30)  // Check if 30 seconds have passed
                 {
-                    int eventId = 1;
-                    var startTime = DateTime.Now;
-                    while ((DateTime.Now - startTime).TotalSeconds < 30)  // Check if 30 seconds have passed
-                    {
-                        buffer = Encoding.UTF8.GetBytes($"data: Event {eventId}\n\n");
-                        await writer.WriteAsync(Encoding.UTF8.GetString(buffer));
-                        await writer.FlushAsync();
-                        eventId++;
-                        Thread.Sleep(1000);  // Simulate an event every second
-                    }
+                    buffer = Encoding.UTF8.GetBytes($"data: Event {eventId}\n\n");
+                    await writer.WriteAsync(Encoding.UTF8.GetString(buffer));
+                    await writer.FlushAsync();
+                    eventId++;
+                    Thread.Sleep(1000);  // Simulate an event every second
                 }
             }
             catch (Exception ex)

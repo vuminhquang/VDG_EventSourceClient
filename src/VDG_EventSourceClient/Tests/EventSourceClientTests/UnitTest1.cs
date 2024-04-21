@@ -36,6 +36,12 @@ public class EventSourceClientTests
         };
         _eventSourceClient = new EventSourceClient(TestUrl, httpClient, _mockLogger.Object, _options);
     }
+    
+    [TearDown]
+    public void Teardown()
+    {
+        _eventSourceClient.Dispose();
+    }
 
     [Test]
     public async Task ShouldReceiveEventsAndChangeState()
