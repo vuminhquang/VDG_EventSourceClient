@@ -88,7 +88,113 @@ public class EventSourceClient : IDisposable
             LogDebug("Streaming has ended.");
         }
     }
+    
+    public async IAsyncEnumerable<CustomEventArgs> StreamAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            LogDebug("Starting to stream events.");
+            await foreach (var eventArgs in StreamEventsAsyncEnumerable(cancellationToken))
+            {
+                yield return eventArgs;
+            }
+        }
+        finally
+        {
+            LogDebug("Streaming has ended.");
+        }
+    }
 
+    private async IAsyncEnumerable<CustomEventArgs> StreamEventsAsyncEnumerable([EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        SetReadyState(ReadyState.Connecting);
+        Stream? stream = null;
+        var attempt = 0;
+
+        while (attempt < _maxRetries && !cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                stream = await PrepareStream(cancellationToken);
+                break;
+            }
+            catch (Exception ex)
+            {
+                LogError($"Exception: {ex.Message}", ex);
+                attempt++;
+                if (attempt >= _maxRetries) throw;
+                await Task.Delay(_retryDelay, cancellationToken);
+            }
+        }
+
+        if (stream != null)
+        {
+            using var reader = new StreamReader(stream, Encoding.UTF8);
+            SetReadyState(ReadyState.Open);
+            await foreach (var eventArgs in ProcessStreamAsyncEnumerable(reader, cancellationToken))
+            {
+                yield return eventArgs;
+            }
+        }
+
+        SetReadyState(ReadyState.Closed);
+    }
+
+    private async Task ProcessStream(StreamReader reader, CancellationToken cancellationToken)
+    {
+        while (!reader.EndOfStream)
+        {
+            var eventArgs = await ParseEvent(reader, cancellationToken);
+            if (eventArgs != null)
+            {
+                OnEventReceived(eventArgs);
+            }
+        }
+    }
+
+    private async IAsyncEnumerable<CustomEventArgs> ProcessStreamAsyncEnumerable(StreamReader reader, [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        while (!reader.EndOfStream)
+        {
+            var eventArgs = await ParseEvent(reader, cancellationToken);
+            if (eventArgs != null)
+            {
+                yield return eventArgs;
+            }
+        }
+    }
+    
+    private async Task<CustomEventArgs?> ParseEvent(StreamReader reader, CancellationToken cancellationToken)
+    {
+        var chunk = new StringBuilder();
+        string? eventId = null;
+
+        while (!reader.EndOfStream)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line == null) continue;
+
+            if (line.StartsWith("id:"))
+            {
+                eventId = line[3..].Trim();
+            }
+            else if (line.StartsWith("data:"))
+            {
+                chunk.AppendLine(line[5..].Trim());
+            }
+            else if (line.Trim() == "" && chunk.Length > 0)
+            {
+                var data = chunk.ToString().TrimEnd('\r', '\n');
+                chunk.Clear();
+                LogDebug($"Raw event data: {data}");
+                return new CustomEventArgs { Type = "message", Data = data, Id = eventId };
+            }
+        }
+
+        return null;
+    }
+    
     private async Task StreamEvents(CancellationToken cancellationToken = default)
     {
         SetReadyState(ReadyState.Connecting);
@@ -154,30 +260,7 @@ public class EventSourceClient : IDisposable
 
         throw new InvalidOperationException("Method or required parameters are not set for HTTP request.");
     }
-
-    private async Task ProcessStream(StreamReader reader, CancellationToken cancellationToken)
-    {
-        var chunk = new StringBuilder();
-        while (!reader.EndOfStream)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            var line = await reader.ReadLineAsync(cancellationToken);
-            if (line == null) continue;
-
-            if (line.StartsWith("data:"))
-            {
-                chunk.AppendLine(line[5..].Trim());
-            }
-            else if (line.Trim() == "" && chunk.Length > 0)
-            {
-                var data = chunk.ToString().TrimEnd('\r', '\n');
-                chunk.Clear();
-                LogDebug($"Raw event data: {data}");
-                OnEventReceived(new CustomEventArgs { Type = "message", Data = data });
-            }
-        }
-    }
-
+    
     protected virtual void Dispose(bool disposing)
     {
         if (!_disposed)

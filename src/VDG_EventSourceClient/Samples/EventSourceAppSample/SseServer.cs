@@ -42,7 +42,8 @@ internal class SseServer
                 var startTime = DateTime.Now;
                 while ((DateTime.Now - startTime).TotalSeconds < 30)  // Check if 30 seconds have passed
                 {
-                    buffer = Encoding.UTF8.GetBytes($"data: Event {eventId}\n\n");
+                    var eventData = $"Event {eventId}";
+                    buffer = Encoding.UTF8.GetBytes($"id: {eventId}\ndata: {eventData}\n\n");
                     await writer.WriteAsync(Encoding.UTF8.GetString(buffer));
                     await writer.FlushAsync();
                     eventId++;

@@ -34,6 +34,28 @@ eventSourceClient.StateChanged += (sender, e) => Console.WriteLine($"State Chang
 await eventSourceClient.Stream();
 ```
 
+**AsyncEnumerable Sample:**
+
+The `EventSourceClient` also provides an `AsyncEnumerable` method for streaming events asynchronously. Here's an example of how to use it:
+
+```csharp
+var eventSourceClient = new EventSourceClient(url, new HttpClient(), logger, new EventSourceExtraOptions());
+Console.WriteLine("Client is now listening to the SSE server...");
+
+await foreach (var eventArgs in eventSourceClient.StreamAsyncEnumerable())
+{
+    Console.WriteLine($"Received Event: {eventArgs.Type}");
+    Console.WriteLine($"Data: {eventArgs.Data}");
+    Console.WriteLine($"ID: {eventArgs.Id}");
+}
+```
+
+In this example, we initialize the `EventSourceClient` as before. Instead of using the `Stream` method and handling events through event handlers, we use the `StreamAsyncEnumerable` method to asynchronously iterate over the events using the `await foreach` construct.
+
+Each event is represented by a `CustomEventArgs` object, which contains the event type, data, and ID. You can process each event as needed within the loop.
+
+Using the `AsyncEnumerable` approach provides a more concise and readable way to handle events, especially when you don't need to handle state changes or other events separately.
+
 **Use Cases:**
 
 - Real-time dashboards

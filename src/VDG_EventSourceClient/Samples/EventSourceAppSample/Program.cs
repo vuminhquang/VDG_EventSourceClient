@@ -46,27 +46,25 @@ using var httpClient = new HttpClient();
 var response = await httpClient.GetAsync(new Uri(url), HttpCompletionOption.ResponseHeadersRead);
 response.EnsureSuccessStatusCode();
 
-var eventSourceClient2 = new EventSourceClient(response.Content, logger);
+using var eventSourceClient2 = new EventSourceClient(response.Content, logger);
 
 Console.WriteLine("Client 2 is now listening to the SSE server...");
-
-eventSourceClient2.EventReceived += (sender, e) =>
-{
-    Console.WriteLine($"Client 2 - Received Event: {e.Type}");
-    Console.WriteLine($"Client 2 - Data: {e.Data}");
-    Console.WriteLine($"Client 2 - ID: {e.Id}");
-    if (e.Retry.HasValue)
-    {
-        Console.WriteLine($"Client 2 - Retry: {e.Retry.Value}");
-    }
-};
 
 eventSourceClient2.StateChanged += (sender, e) =>
 {
     Console.WriteLine($"Client 2 - State Changed: {e.ReadyState}");
 };
 
-await eventSourceClient2.Stream();
+await foreach (var message in eventSourceClient2.StreamAsyncEnumerable())
+{
+    Console.WriteLine($"Client 2 - Received Event: {message.Type}");
+    Console.WriteLine($"Client 2 - Data: {message.Data}");
+    Console.WriteLine($"Client 2 - ID: {message.Id}");
+    if (message.Retry.HasValue)
+    {
+        Console.WriteLine($"Client 2 - Retry: {message.Retry.Value}");
+    }
+}
 
 Console.WriteLine("Press ENTER to exit...");
 Console.ReadLine();
